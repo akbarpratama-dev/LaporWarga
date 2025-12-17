@@ -1,0 +1,16 @@
+# Mac system files
+.DS_Store
+
+# Upload folder (jangan push gambar upload)
+uploads/*
+!uploads/.gitkeep
+
+# Database credentials (jika ada file terpisah)
+config/database.php
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
