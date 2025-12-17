@@ -136,7 +136,8 @@ $laporan_selesai = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <a href="detail_info.php?id=<?php echo $info['id']; ?>" class="info-detail-link">Lihat Selengkapnya</a>
                                     <?php endif; ?>
                                     <div class="info-tanggal">
-                                        <span><i class="ri-calendar-line"></i> <?php echo date('d M Y', strtotime($info['tanggal_mulai'])); ?></span>
+                                        <span><i class="ri-calendar-line"></i> <?php echo date('d M Y', strtotime($info['tanggal_mulai'])); ?>
+                                       </span>
                                         <?php if($info['tanggal_selesai']): ?>
                                         <span><i class="ri-arrow-right-line"></i> <?php echo date('d M Y', strtotime($info['tanggal_selesai'])); ?></span>
                                         <?php endif; ?>
