@@ -79,9 +79,16 @@ try {
         $conn->exec("ALTER TABLE laporan ADD COLUMN foto_after_blob MEDIUMBLOB NULL AFTER foto_after");
         $conn->exec("ALTER TABLE laporan ADD COLUMN foto_after_mime VARCHAR(50) NULL AFTER foto_after_blob");
     }
+    // Auto-migrate: ensure timestamp columns exist
+    $checkCol3 = $conn->query("SHOW COLUMNS FROM laporan LIKE 'diterima_at'");
+    if ($checkCol3 && $checkCol3->rowCount() === 0) {
+        $conn->exec("ALTER TABLE laporan ADD COLUMN diterima_at TIMESTAMP NULL DEFAULT NULL");
+        $conn->exec("ALTER TABLE laporan ADD COLUMN diproses_at TIMESTAMP NULL DEFAULT NULL");
+        $conn->exec("ALTER TABLE laporan ADD COLUMN selesai_at TIMESTAMP NULL DEFAULT NULL");
+    }
 
-    $query = "INSERT INTO laporan (kode_laporan, nama_pelapor, no_hp, kategori, lokasi, deskripsi, foto_blob, foto_mime, tanggal_lapor, status) 
-              VALUES (:kode_laporan, :nama_pelapor, :no_hp, :kategori, :lokasi, :deskripsi, :foto_blob, :foto_mime, :tanggal_lapor, :status)";
+    $query = "INSERT INTO laporan (kode_laporan, nama_pelapor, no_hp, kategori, lokasi, deskripsi, foto_blob, foto_mime, tanggal_lapor, status, diterima_at) 
+              VALUES (:kode_laporan, :nama_pelapor, :no_hp, :kategori, :lokasi, :deskripsi, :foto_blob, :foto_mime, :tanggal_lapor, :status, :diterima_at)";
     
     $stmt = $conn->prepare($query);
     $stmt->bindParam(':kode_laporan', $kode_laporan);
@@ -94,6 +101,7 @@ try {
     $stmt->bindParam(':foto_mime', $foto_mime);
     $stmt->bindParam(':tanggal_lapor', $tanggal_lapor);
     $stmt->bindParam(':status', $status);
+    $stmt->bindParam(':diterima_at', $tanggal_lapor);
     
     if ($stmt->execute()) {
         // Redirect ke halaman sukses dengan kode laporan

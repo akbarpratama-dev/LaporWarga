@@ -69,10 +69,18 @@ if (isset($_FILES['foto_after']) && is_array($_FILES['foto_after']) && $_FILES['
         error_log('Admin error upload foto_after (kode): ' . $_FILES['foto_after']['error']);
     }
 }try {
+	// Auto-migrate: ensure timestamp columns exist
+	$checkCol = $conn->query("SHOW COLUMNS FROM laporan LIKE 'diterima_at'");
+	if ($checkCol && $checkCol->rowCount() === 0) {
+		$conn->exec("ALTER TABLE laporan ADD COLUMN diterima_at TIMESTAMP NULL DEFAULT NULL");
+		$conn->exec("ALTER TABLE laporan ADD COLUMN diproses_at TIMESTAMP NULL DEFAULT NULL");
+		$conn->exec("ALTER TABLE laporan ADD COLUMN selesai_at TIMESTAMP NULL DEFAULT NULL");
+	}
+
 	if($status === 'Selesai') {
 		// Only update BLOB if new file was uploaded
 		if ($foto_after_blob !== null) {
-			$sql = "UPDATE laporan SET status = :status, catatan_admin = :catatan_admin, biaya = :biaya, durasi = :durasi, foto_after_blob = :foto_after_blob, foto_after_mime = :foto_after_mime, tanggal_selesai = NOW() WHERE id = :id";
+			$sql = "UPDATE laporan SET status = :status, catatan_admin = :catatan_admin, biaya = :biaya, durasi = :durasi, foto_after_blob = :foto_after_blob, foto_after_mime = :foto_after_mime, tanggal_selesai = NOW(), selesai_at = NOW() WHERE id = :id";
 			$stmt = $conn->prepare($sql);
 			$stmt->bindParam(':status', $status);
 			$stmt->bindParam(':catatan_admin', $catatan_admin);
@@ -82,7 +90,7 @@ if (isset($_FILES['foto_after']) && is_array($_FILES['foto_after']) && $_FILES['
 			$stmt->bindParam(':foto_after_mime', $foto_after_mime);
 			$stmt->bindParam(':id', $id, PDO::PARAM_INT);
 		} else {
-			$sql = "UPDATE laporan SET status = :status, catatan_admin = :catatan_admin, biaya = :biaya, durasi = :durasi, tanggal_selesai = NOW() WHERE id = :id";
+			$sql = "UPDATE laporan SET status = :status, catatan_admin = :catatan_admin, biaya = :biaya, durasi = :durasi, tanggal_selesai = NOW(), selesai_at = NOW() WHERE id = :id";
 			$stmt = $conn->prepare($sql);
 			$stmt->bindParam(':status', $status);
 			$stmt->bindParam(':catatan_admin', $catatan_admin);
@@ -90,6 +98,11 @@ if (isset($_FILES['foto_after']) && is_array($_FILES['foto_after']) && $_FILES['
 			$stmt->bindParam(':durasi', $durasi);
 			$stmt->bindParam(':id', $id, PDO::PARAM_INT);
 		}
+	} elseif($status === 'Diproses') {
+		$sql = "UPDATE laporan SET status = :status, diproses_at = NOW() WHERE id = :id";
+		$stmt = $conn->prepare($sql);
+		$stmt->bindParam(':status', $status);
+		$stmt->bindParam(':id', $id, PDO::PARAM_INT);
 	} else {
 		$sql = "UPDATE laporan SET status = :status WHERE id = :id";
 		$stmt = $conn->prepare($sql);

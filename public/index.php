@@ -79,27 +79,27 @@ $laporan_selesai = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <section id="flow-laporan" class="process-flow">
         <div class="container">
             <div class="process-grid">
-                <div class="process-item">
+                <div class="process-item scroll-animate">
                     <div class="process-icon"><i class="ri-edit-2-line"></i></div>
                     <h4 class="process-title">Tulis Laporan</h4>
                     <p class="process-desc">Laporkan keluhan atau aspirasi Anda dengan jelas dan lengkap</p>
                 </div>
-                <div class="process-item">
+                <div class="process-item scroll-animate" style="animation-delay: 0.1s;">
                     <div class="process-icon"><i class="ri-shield-check-line"></i></div>
                     <h4 class="process-title">Proses Verifikasi</h4>
                     <p class="process-desc">Dalam 3 hari, laporan akan diverifikasi dan diteruskan</p>
                 </div>
-                <div class="process-item">
+                <div class="process-item scroll-animate" style="animation-delay: 0.2s;">
                     <div class="process-icon"><i class="ri-chat-settings-line"></i></div>
                     <h4 class="process-title">Proses Tindak Lanjut</h4>
                     <p class="process-desc">Dalam 5 hari, instansi menindaklanjuti dan membalas laporan</p>
                 </div>
-                <div class="process-item">
+                <div class="process-item scroll-animate" style="animation-delay: 0.3s;">
                     <div class="process-icon"><i class="ri-message-2-line"></i></div>
                     <h4 class="process-title">Beri Tanggapan</h4>
                     <p class="process-desc">Anda dapat menanggapi balasan instansi dalam 10 hari</p>
                 </div>
-                <div class="process-item">
+                <div class="process-item scroll-animate" style="animation-delay: 0.4s;">
                     <div class="process-icon"><i class="ri-check-double-line"></i></div>
                     <h4 class="process-title">Selesai</h4>
                     <p class="process-desc">Laporan ditindaklanjuti hingga tuntas</p>

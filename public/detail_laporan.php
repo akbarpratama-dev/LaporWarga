@@ -119,15 +119,24 @@ if(!$laporan){
             <div class="timeline">
               <div class="timeline-item <?php echo in_array($laporan['status'],['Diterima','Diproses','Selesai'])?'active':''; ?>">
                 <div class="timeline-dot"></div>
-                <div class="timeline-content"><strong>Diterima</strong><small>Tiket dibuat</small></div>
+                <div class="timeline-content">
+                  <strong>Diterima</strong>
+                  <small><?php echo !empty($laporan['diterima_at']) ? date('d M Y, H:i', strtotime($laporan['diterima_at'])) : 'Tiket dibuat'; ?></small>
+                </div>
               </div>
               <div class="timeline-item <?php echo in_array($laporan['status'],['Diproses','Selesai'])?'active':''; ?>">
                 <div class="timeline-dot"></div>
-                <div class="timeline-content"><strong>Diproses</strong><small>Dalam pengerjaan</small></div>
+                <div class="timeline-content">
+                  <strong>Diproses</strong>
+                  <small><?php echo !empty($laporan['diproses_at']) ? date('d M Y, H:i', strtotime($laporan['diproses_at'])) : 'Menunggu proses'; ?></small>
+                </div>
               </div>
               <div class="timeline-item <?php echo $laporan['status']==='Selesai'?'active':''; ?>">
                 <div class="timeline-dot"></div>
-                <div class="timeline-content"><strong>Selesai</strong><small>Pekerjaan selesai</small></div>
+                <div class="timeline-content">
+                  <strong>Selesai</strong>
+                  <small><?php echo !empty($laporan['selesai_at']) ? date('d M Y, H:i', strtotime($laporan['selesai_at'])) : 'Belum selesai'; ?></small>
+                </div>
               </div>
             </div>
           </div>
