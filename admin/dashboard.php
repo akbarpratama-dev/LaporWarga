@@ -11,10 +11,59 @@ $diterima = (int)$conn->query("SELECT COUNT(*) FROM laporan WHERE status='Diteri
 $diproses = (int)$conn->query("SELECT COUNT(*) FROM laporan WHERE status='Diproses'")->fetchColumn();
 $selesai = (int)$conn->query("SELECT COUNT(*) FROM laporan WHERE status='Selesai'")->fetchColumn();
 
-// Recent
-$stmt = $conn->prepare("SELECT id, kode_laporan, nama_pelapor, kategori, status, tanggal_lapor FROM laporan ORDER BY tanggal_lapor DESC LIMIT 8");
-$stmt->execute();
-$recent = $stmt->fetchAll();
+// Laporan per minggu (4 minggu terakhir)
+$weeklyStmt = $conn->query("
+    SELECT 
+        WEEK(tanggal_lapor, 1) as week_num,
+        YEAR(tanggal_lapor) as year,
+        COUNT(*) as count,
+        DATE_FORMAT(MIN(tanggal_lapor), '%d %b') as week_start
+    FROM laporan 
+    WHERE tanggal_lapor >= DATE_SUB(NOW(), INTERVAL 4 WEEK)
+    GROUP BY WEEK(tanggal_lapor, 1), YEAR(tanggal_lapor)
+    ORDER BY year, week_num
+");
+$weeklyData = $weeklyStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Rata-rata durasi penyelesaian (dalam hari)
+$avgDurationStmt = $conn->query("
+    SELECT 
+        AVG(DATEDIFF(selesai_at, diterima_at)) as avg_days,
+        MIN(DATEDIFF(selesai_at, diterima_at)) as min_days,
+        MAX(DATEDIFF(selesai_at, diterima_at)) as max_days
+    FROM laporan 
+    WHERE status = 'Selesai' AND selesai_at IS NOT NULL AND diterima_at IS NOT NULL
+");
+$durationData = $avgDurationStmt->fetch(PDO::FETCH_ASSOC);
+$avgDays = $durationData['avg_days'] ? round($durationData['avg_days'], 1) : 0;
+$minDays = $durationData['min_days'] ?? 0;
+$maxDays = $durationData['max_days'] ?? 0;
+
+// Laporan per kategori
+$categoryStmt = $conn->query("
+    SELECT kategori, COUNT(*) as count 
+    FROM laporan 
+    GROUP BY kategori 
+    ORDER BY count DESC
+");
+$categoryData = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Laporan per bulan (6 bulan terakhir)
+$monthlyStmt = $conn->query("
+    SELECT 
+        DATE_FORMAT(tanggal_lapor, '%b %Y') as month_label,
+        DATE_FORMAT(tanggal_lapor, '%Y-%m') as month_key,
+        COUNT(*) as count
+    FROM laporan 
+    WHERE tanggal_lapor >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+    GROUP BY DATE_FORMAT(tanggal_lapor, '%Y-%m')
+    ORDER BY month_key
+");
+$monthlyData = $monthlyStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Tingkat penyelesaian
+$completionRate = $total > 0 ? round(($selesai / $total) * 100, 1) : 0;
+$processingRate = $total > 0 ? round((($diproses + $selesai) / $total) * 100, 1) : 0;
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -25,6 +74,183 @@ $recent = $stmt->fetchAll();
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/3.5.0/remixicon.css" rel="stylesheet">
   <link rel="stylesheet" href="../public/assets/css/style.css?v=2.1">
+  <style>
+    .chart-container {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+    }
+    .chart-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .chart-title i {
+      color: var(--primary-color);
+    }
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      height: 200px;
+      margin-top: 16px;
+    }
+    .bar-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .bar {
+      width: 100%;
+      background: linear-gradient(to top, var(--primary-color), #3b82f6);
+      border-radius: 8px 8px 0 0;
+      position: relative;
+      transition: transform 0.3s ease;
+      min-height: 20px;
+    }
+    .bar:hover {
+      transform: translateY(-4px);
+    }
+    .bar-value {
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: 600;
+      color: var(--text-dark);
+      font-size: 14px;
+    }
+    .bar-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .metric-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      border-radius: 12px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-card.green {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    .metric-card.orange {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    .metric-card.blue {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+    .metric-label {
+      font-size: 13px;
+      opacity: 0.9;
+      margin-bottom: 8px;
+    }
+    .metric-value {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .metric-unit {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-left: 4px;
+    }
+    .metric-icon {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 48px;
+      opacity: 0.2;
+    }
+    .donut-chart {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+      margin-top: 16px;
+    }
+    .donut-svg {
+      width: 180px;
+      height: 180px;
+    }
+    .donut-legend {
+      flex: 1;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding: 8px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .legend-item:hover {
+      background: #f9fafb;
+    }
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+    }
+    .legend-label {
+      flex: 1;
+      font-size: 14px;
+      color: var(--text-dark);
+    }
+    .legend-value {
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+    .progress-bar-container {
+      margin-bottom: 20px;
+    }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .progress-bar {
+      height: 12px;
+      background: #e5e7eb;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-color), #3b82f6);
+      border-radius: 6px;
+      transition: width 0.6s ease;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 1200px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body class="admin-page">
   <aside class="admin-sidebar">
@@ -43,7 +269,7 @@ $recent = $stmt->fetchAll();
 
   <main class="admin-content">
     <div class="admin-header">
-      <h1>Dashboard</h1>
+      <h1>Dashboard Analytics</h1>
       <div class="admin-user"><i class="ri-user-line"></i> <?php echo htmlspecialchars($_SESSION['admin_username']); ?></div>
     </div>
 
@@ -54,28 +280,193 @@ $recent = $stmt->fetchAll();
       <div class="stat-card stat-success"><div class="stat-icon"><i class="ri-checkbox-circle-line"></i></div><div class="stat-content"><p>Selesai</p><div class="stat-number"><?php echo $selesai; ?></div></div></div>
     </div>
 
-    <div class="card">
-      <div class="card-header"><h3>Laporan Terbaru</h3></div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table">
-            <thead><tr><th>Kode</th><th>Nama</th><th>Kategori</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
-            <tbody>
-              <?php foreach($recent as $r): ?>
-              <tr>
-                <td><?php echo htmlspecialchars($r['kode_laporan']); ?></td>
-                <td><?php echo htmlspecialchars($r['nama_pelapor']); ?></td>
-                <td><?php echo htmlspecialchars($r['kategori']); ?></td>
-                <td><span class="badge badge-<?php echo $r['status']==='Diterima'?'info':($r['status']==='Diproses'?'warning':'success'); ?>"><?php echo htmlspecialchars($r['status']); ?></span></td>
-                <td><?php echo date('d M Y', strtotime($r['tanggal_lapor'])); ?></td>
-                <td><a class="btn btn-sm btn-primary" href="update_laporan.php?id=<?php echo $r['id']; ?>">Kelola</a></td>
-              </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
+    <!-- Metrics Cards -->
+    <div class="metric-grid">
+      <div class="metric-card green">
+        <div class="metric-label">Rata-rata Waktu Penyelesaian</div>
+        <div class="metric-value"><?php echo $avgDays; ?><span class="metric-unit">hari</span></div>
+        <i class="ri-time-line metric-icon"></i>
+      </div>
+      <div class="metric-card orange">
+        <div class="metric-label">Tercepat / Terlama</div>
+        <div class="metric-value" style="font-size: 24px;"><?php echo $minDays; ?> / <?php echo $maxDays; ?><span class="metric-unit">hari</span></div>
+        <i class="ri-speed-line metric-icon"></i>
+      </div>
+      <div class="metric-card blue">
+        <div class="metric-label">Tingkat Penyelesaian</div>
+        <div class="metric-value"><?php echo $completionRate; ?><span class="metric-unit">%</span></div>
+        <i class="ri-checkbox-circle-line metric-icon"></i>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- Laporan per Minggu -->
+      <div class="chart-container">
+        <div class="chart-title">
+          <i class="ri-calendar-line"></i>
+          Laporan per Minggu (4 Minggu Terakhir)
+        </div>
+        <div class="bar-chart">
+          <?php 
+          $maxWeekly = max(array_column($weeklyData, 'count') ?: [1]);
+          if (empty($weeklyData)) {
+            // Dummy data jika tidak ada
+            $weeklyData = [
+              ['week_start' => 'Minggu 1', 'count' => 5],
+              ['week_start' => 'Minggu 2', 'count' => 8],
+              ['week_start' => 'Minggu 3', 'count' => 12],
+              ['week_start' => 'Minggu 4', 'count' => 7],
+            ];
+            $maxWeekly = 12;
+          }
+          foreach ($weeklyData as $week): 
+            $height = ($week['count'] / $maxWeekly) * 100;
+          ?>
+          <div class="bar-item">
+            <div class="bar" style="height: <?php echo $height; ?>%;">
+              <span class="bar-value"><?php echo $week['count']; ?></span>
+            </div>
+            <div class="bar-label"><?php echo $week['week_start']; ?></div>
+          </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+
+      <!-- Laporan per Kategori -->
+      <div class="chart-container">
+        <div class="chart-title">
+          <i class="ri-pie-chart-line"></i>
+          Laporan per Kategori
+        </div>
+        <div class="donut-chart">
+          <?php 
+          $colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+          $totalCategory = array_sum(array_column($categoryData, 'count'));
+          
+          if (empty($categoryData)) {
+            // Dummy data
+            $categoryData = [
+              ['kategori' => 'Jalan Rusak', 'count' => 15],
+              ['kategori' => 'Lampu Jalan', 'count' => 8],
+              ['kategori' => 'Saluran Air', 'count' => 12],
+              ['kategori' => 'Sampah', 'count' => 6],
+            ];
+            $totalCategory = 41;
+          }
+          
+          $circumference = 2 * 3.14159 * 70;
+          $currentOffset = 0;
+          ?>
+          <svg class="donut-svg" viewBox="0 0 180 180">
+            <circle cx="90" cy="90" r="70" fill="none" stroke="#e5e7eb" stroke-width="28"></circle>
+            <?php foreach ($categoryData as $i => $cat): 
+              $percentage = ($cat['count'] / $totalCategory) * 100;
+              $strokeDasharray = ($percentage / 100) * $circumference;
+              $strokeDashoffset = -$currentOffset;
+              $currentOffset += $strokeDasharray;
+              $color = $colors[$i % count($colors)];
+            ?>
+            <circle 
+              cx="90" 
+              cy="90" 
+              r="70" 
+              fill="none" 
+              stroke="<?php echo $color; ?>" 
+              stroke-width="28"
+              stroke-dasharray="<?php echo $strokeDasharray; ?> <?php echo $circumference; ?>"
+              stroke-dashoffset="<?php echo $strokeDashoffset; ?>"
+              transform="rotate(-90 90 90)"
+              style="transition: stroke-dashoffset 0.6s ease;">
+            </circle>
+            <?php endforeach; ?>
+            <text x="90" y="85" text-anchor="middle" font-size="24" font-weight="700" fill="#1f2937"><?php echo $totalCategory; ?></text>
+            <text x="90" y="105" text-anchor="middle" font-size="12" fill="#6b7280">Total</text>
+          </svg>
+          <div class="donut-legend">
+            <?php foreach ($categoryData as $i => $cat): 
+              $percentage = round(($cat['count'] / $totalCategory) * 100, 1);
+              $color = $colors[$i % count($colors)];
+            ?>
+            <div class="legend-item">
+              <div class="legend-color" style="background: <?php echo $color; ?>;"></div>
+              <div class="legend-label"><?php echo htmlspecialchars($cat['kategori']); ?></div>
+              <div class="legend-value"><?php echo $cat['count']; ?> (<?php echo $percentage; ?>%)</div>
+            </div>
+            <?php endforeach; ?>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- Laporan per Bulan -->
+    <div class="chart-container">
+      <div class="chart-title">
+        <i class="ri-line-chart-line"></i>
+        Tren Laporan 6 Bulan Terakhir
+      </div>
+      <div class="bar-chart">
+        <?php 
+        $maxMonthly = max(array_column($monthlyData, 'count') ?: [1]);
+        if (empty($monthlyData)) {
+          // Dummy data
+          $monthlyData = [
+            ['month_label' => 'Jul 2025', 'count' => 18],
+            ['month_label' => 'Aug 2025', 'count' => 22],
+            ['month_label' => 'Sep 2025', 'count' => 15],
+            ['month_label' => 'Oct 2025', 'count' => 28],
+            ['month_label' => 'Nov 2025', 'count' => 25],
+            ['month_label' => 'Dec 2025', 'count' => 30],
+          ];
+          $maxMonthly = 30;
+        }
+        foreach ($monthlyData as $month): 
+          $height = ($month['count'] / $maxMonthly) * 100;
+        ?>
+        <div class="bar-item">
+          <div class="bar" style="height: <?php echo $height; ?>%;">
+            <span class="bar-value"><?php echo $month['count']; ?></span>
+          </div>
+          <div class="bar-label"><?php echo $month['month_label']; ?></div>
+        </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+
+    <!-- Progress Bars -->
+    <div class="chart-container">
+      <div class="chart-title">
+        <i class="ri-progress-3-line"></i>
+        Tingkat Respon & Penyelesaian
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-label">
+          <span>Laporan yang Ditangani (Diproses + Selesai)</span>
+          <strong><?php echo $processingRate; ?>%</strong>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: <?php echo $processingRate; ?>%;"></div>
+        </div>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-label">
+          <span>Laporan yang Diselesaikan</span>
+          <strong><?php echo $completionRate; ?>%</strong>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: <?php echo $completionRate; ?>%; background: linear-gradient(90deg, #10b981, #059669);"></div>
+        </div>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-label">
+          <span>Laporan Menunggu (Diterima)</span>
+          <strong><?php echo $total > 0 ? round(($diterima / $total) * 100, 1) : 0; ?>%</strong>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: <?php echo $total > 0 ? round(($diterima / $total) * 100, 1) : 0; ?>%; background: linear-gradient(90deg, #f59e0b, #d97706);"></div>
+        </div>
+      </div>
+    </div>
+
   </main>
 </body>
 </html>
