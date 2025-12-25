@@ -30,7 +30,7 @@ $laporan_selesai = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>LaporWarga - Sistem Pelaporan Warga</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/3.5.0/remixicon.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css?v=2.2">
+    <link rel="stylesheet" href="assets/css/style.css?v=2.3">
 </head>
 <body>
     <!-- Navbar -->
@@ -179,9 +179,15 @@ $laporan_selesai = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="alert alert-error" style="margin-bottom: 2rem;">
                     <i class="ri-error-warning-line"></i> 
                     <?php 
-                    if($_GET['error'] === 'submit') echo 'Gagal mengirim laporan. Silakan coba lagi.';
-                    elseif($_GET['error'] === 'database') echo 'Error database: ' . htmlspecialchars($_GET['msg'] ?? '');
-                    else echo 'Terjadi kesalahan. Silakan coba lagi.';
+                    if($_GET['error'] === 'submit') {
+                        echo 'Gagal mengirim laporan. Silakan coba lagi.';
+                    } elseif($_GET['error'] === 'rate_limit') {
+                        echo htmlspecialchars($_GET['msg'] ?? 'Anda sudah mengirim laporan sebelumnya. Silakan menunggu 2 jam sebelum mengirim laporan baru.');
+                    } elseif($_GET['error'] === 'database') {
+                        echo 'Error database: ' . htmlspecialchars($_GET['msg'] ?? '');
+                    } else {
+                        echo 'Terjadi kesalahan. Silakan coba lagi.';
+                    }
                     ?>
                 </div>
                 <?php endif; ?>
@@ -217,14 +223,25 @@ $laporan_selesai = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
 
                     <div class="form-group">
-                        <label for="deskripsi">Deskripsi Masalah *</label>
-                        <textarea id="deskripsi" name="deskripsi" rows="5" required placeholder="Jelaskan masalah secara detail..."></textarea>
+                        <label for="foto">Upload Foto *</label>
+                        <input type="file" id="foto" name="foto" accept="image/jpeg,image/png,image/jpg" required>
+                        <small class="form-text">Unggah foto kondisi di lapangan. Anda dapat menggunakan AI untuk membantu menyusun deskripsi laporan.</small>
+                        <small class="form-text" style="margin-top: 4px;">Format: JPG, PNG. Max 5MB</small>
+                    </div>
+
+                    <!-- Vision AI Button -->
+                    <div class="form-group" id="vision-ai-container" style="display: none;">
+                        <button type="button" id="btn-vision-ai" class="btn btn-secondary" disabled>
+                            <i class="ri-magic-line"></i> Isi Deskripsi dari Foto (AI)
+                        </button>
+                        <small class="form-text" style="margin-top: 8px; display: block;">
+                            <i class="ri-information-line"></i> Hasil dapat diedit sebelum dikirim
+                        </small>
                     </div>
 
                     <div class="form-group">
-                        <label for="foto">Upload Foto (Opsional)</label>
-                        <input type="file" id="foto" name="foto" accept="image/*">
-                        <small class="form-text">Format: JPG, PNG, JPEG. Max 2MB</small>
+                        <label for="deskripsi">Deskripsi Masalah *</label>
+                        <textarea id="deskripsi" name="deskripsi" rows="5" required placeholder="Jelaskan masalah secara detail..."></textarea>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-block">Kirim Laporan</button>
@@ -343,7 +360,68 @@ $laporan_selesai = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </footer>
 
+    <!-- Chatbot -->
+    <div id="chatbot-container">
+        <!-- Floating Button -->
+        <button id="chatbot-toggle" class="chatbot-btn" aria-label="Butuh bantuan?">
+            <i class="ri-question-answer-line"></i>
+            <span class="chatbot-tooltip">Butuh bantuan?</span>
+        </button>
+
+        <!-- Chat Panel -->
+        <div id="chatbot-panel" class="chatbot-panel">
+            <div class="chatbot-header">
+                <div>
+                    <h4>Asisten LaporWarga</h4>
+                    <p>Bantuan informasi dan panduan</p>
+                </div>
+                <button id="chatbot-close" class="chatbot-close" aria-label="Tutup chat">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+
+            <div class="chatbot-messages" id="chatbot-messages">
+                <div class="chatbot-message bot-message">
+                    <div class="message-avatar">
+                        <i class="ri-robot-line"></i>
+                    </div>
+                    <div class="message-content">
+                        <p>Halo! 👋 Saya asisten virtual LaporWarga. Ada yang bisa saya bantu?</p>
+                        <div class="message-suggestions">
+                            <button class="suggestion-btn" data-msg="Bagaimana cara melapor?">Cara melapor</button>
+                            <button class="suggestion-btn" data-msg="Bagaimana cara cek status laporan?">Cek status</button>
+                            <button class="suggestion-btn" data-msg="Apa arti status Diproses?">Arti status</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chatbot-input-area">
+                <input 
+                    type="text" 
+                    id="chatbot-input" 
+                    placeholder="Ketik pertanyaan Anda..." 
+                    maxlength="500"
+                    autocomplete="off"
+                >
+                <button id="chatbot-send" class="chatbot-send-btn" aria-label="Kirim pesan">
+                    <i class="ri-send-plane-fill"></i>
+                </button>
+            </div>
+
+            <div class="chatbot-typing" id="chatbot-typing" style="display: none;">
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="assets/js/script.js"></script>
+    <script src="assets/js/chatbot.js"></script>
+    <script src="assets/js/vision.js"></script>
     <script>
     function copyKode() {
         const kodeInput = document.getElementById('kodeLaporan');

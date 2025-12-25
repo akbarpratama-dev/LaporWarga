@@ -1,15 +1,25 @@
 <?php
 require_once '../config/database.php';
+require_once '../config/report_tracker.php';
 
+$database = new Database();
+$conn = $database->getConnection();
+
+// Cookie-based tracked reports
+$trackedReports = [];
+$hasTrackedReports = ReportTracker::hasTrackedReports();
+
+if ($hasTrackedReports) {
+    $trackedReports = ReportTracker::fetchTrackedReportsFromDB($conn);
+}
+
+// Manual search result
 $laporan = null;
 $error = null;
 
 if(isset($_GET['kode'])) {
     $kode = trim($_GET['kode']);
     if(!empty($kode)) {
-        $database = new Database();
-        $conn = $database->getConnection();
-        
         $stmt = $conn->prepare("SELECT * FROM laporan WHERE kode_laporan = :kode");
         $stmt->bindParam(':kode', $kode);
         $stmt->execute();
@@ -51,8 +61,80 @@ if(isset($_GET['kode'])) {
                 <p class="section-subtitle">Pantau perkembangan laporan Anda</p>
             </div>
 
-            <div class="card" style="max-width: 600px; margin: 0 auto;">
+            <?php if ($hasTrackedReports && !empty($trackedReports)): ?>
+            <!-- Tracked Reports Section -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <h3><i class="ri-file-list-3-line"></i> Laporan Anda</h3>
+                    <p style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">
+                        Ditemukan <?php echo count($trackedReports); ?> laporan dari browser ini
+                    </p>
+                </div>
                 <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Kode Laporan</th>
+                                    <th>Nama</th>
+                                    <th>Kategori</th>
+                                    <th>Lokasi</th>
+                                    <th>Status</th>
+                                    <th>Tanggal</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($trackedReports as $report): ?>
+                                <tr>
+                                    <td><strong><?php echo htmlspecialchars($report['kode_laporan']); ?></strong></td>
+                                    <td><?php echo htmlspecialchars($report['nama_pelapor']); ?></td>
+                                    <td><?php echo htmlspecialchars($report['kategori']); ?></td>
+                                    <td><?php echo htmlspecialchars($report['lokasi']); ?></td>
+                                    <td>
+                                        <span class="badge badge-<?php 
+                                            echo $report['status'] === 'Diterima' ? 'info' : 
+                                                ($report['status'] === 'Diproses' ? 'warning' : 'success'); 
+                                        ?>">
+                                            <?php echo htmlspecialchars($report['status']); ?>
+                                        </span>
+                                    </td>
+                                    <td><?php echo date('d/m/Y', strtotime($report['tanggal_lapor'])); ?></td>
+                                    <td>
+                                        <a href="detail_laporan.php?id=<?php echo $report['id']; ?>" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="ri-eye-line"></i> Detail
+                                        </a>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e0e0e0; text-align: center;">
+                        <p style="color: #666; margin-bottom: 1rem;">
+                            <i class="ri-information-line"></i> 
+                            Ingin cek laporan lain atau laporan dari perangkat lain?
+                        </p>
+                        <button onclick="document.getElementById('manualSearchForm').style.display='block'; this.style.display='none';" 
+                                class="btn btn-outline">
+                            <i class="ri-search-line"></i> Cek Laporan Secara Manual
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Search Form (Hidden by default if tracked reports exist) -->
+            <div class="card" id="manualSearchForm" style="display: <?php echo $hasTrackedReports ? 'none' : 'block'; ?>;">
+            <?php else: ?>
+            <!-- Manual Search Form (Shown by default if no tracked reports) -->
+            <div class="card">
+            <?php endif; ?>
+                <div class="card-body">
+                    <h3 style="margin-bottom: 1rem;">
+                        <i class="ri-search-line"></i> Cari Laporan Manual
+                    </h3>
                     <form action="" method="GET" class="search-form">
                         <div class="form-group">
                             <label for="kode">Kode Laporan</label>

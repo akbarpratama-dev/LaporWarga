@@ -3,6 +3,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 require_once '../config/database.php';
+require_once '../config/report_tracker.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: ../public/index.php#lapor");
@@ -29,6 +30,63 @@ $lokasi = trim($_POST['lokasi']);
 $deskripsi = trim($_POST['deskripsi']);
 $tanggal_lapor = date('Y-m-d H:i:s');
 $status = 'Diterima';
+
+// ============================================
+// RATE LIMITING: Check submission frequency
+// ============================================
+$rate_limit_hours = 2; // Configurable interval in hours
+
+try {
+    // Query to find the most recent report from this phone number
+    $checkStmt = $conn->prepare("
+        SELECT tanggal_lapor 
+        FROM laporan 
+        WHERE no_hp = :no_hp 
+        ORDER BY tanggal_lapor DESC 
+        LIMIT 1
+    ");
+    $checkStmt->bindParam(':no_hp', $no_hp);
+    $checkStmt->execute();
+    
+    $lastReport = $checkStmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($lastReport) {
+        // Calculate time difference in seconds
+        $lastSubmitTime = new DateTime($lastReport['tanggal_lapor']);
+        $currentTime = new DateTime();
+        $timeDiff = $currentTime->getTimestamp() - $lastSubmitTime->getTimestamp();
+        
+        // Convert rate limit to seconds (hours * 60 minutes * 60 seconds)
+        $rate_limit_seconds = $rate_limit_hours * 60 * 60;
+        
+        // If time difference is less than allowed interval, reject
+        if ($timeDiff < $rate_limit_seconds) {
+            // Calculate remaining time
+            $remaining_seconds = $rate_limit_seconds - $timeDiff;
+            $remaining_hours = floor($remaining_seconds / 3600);
+            $remaining_minutes = floor(($remaining_seconds % 3600) / 60);
+            
+            $wait_time = '';
+            if ($remaining_hours > 0) {
+                $wait_time = $remaining_hours . ' jam ' . $remaining_minutes . ' menit';
+            } else {
+                $wait_time = $remaining_minutes . ' menit';
+            }
+            
+            $error_message = "Anda sudah mengirim laporan sebelumnya. Silakan menunggu {$wait_time} lagi sebelum mengirim laporan baru.";
+            
+            error_log("Rate limit exceeded for no_hp: {$no_hp}. Time diff: {$timeDiff}s, Required: {$rate_limit_seconds}s");
+            
+            header("Location: ../public/index.php?error=rate_limit&msg=" . urlencode($error_message) . "#lapor");
+            exit();
+        }
+    }
+    // If no previous report or time has passed, continue with submission
+    
+} catch (PDOException $e) {
+    error_log("Rate limit check error: " . $e->getMessage());
+    // Continue with submission even if rate limit check fails (fail-safe)
+}
 
 // Handle upload foto (simpan sebagai BLOB di database)
 $foto_blob = null;
@@ -104,6 +162,14 @@ try {
     $stmt->bindParam(':diterima_at', $tanggal_lapor);
     
     if ($stmt->execute()) {
+        // Get the inserted report ID
+        $reportId = (int) $conn->lastInsertId();
+        
+        // Add report ID to tracking cookie
+        if ($reportId > 0) {
+            ReportTracker::addReport($reportId);
+        }
+        
         // Redirect ke halaman sukses dengan kode laporan
         header("Location: ../public/index.php?success=1&kode=" . urlencode($kode_laporan) . "#lapor");
         exit();

@@ -40,6 +40,8 @@ Aplikasi web pelaporan warga berbasis PHP Native untuk memudahkan komunikasi ant
 - 📱 **Fully Responsive Design** - Tampilan optimal di mobile, tablet, dan desktop
 - 🎨 **Smooth Animations** - Fade-in animations pada hero section dan scroll-triggered sections
 - 🔄 **Auto-refresh Status** - Alert sukses dengan countdown timer 20 detik
+- 🤖 **AI Chatbot Assistant** - Interactive FAQ chatbot powered by OpenAI untuk membantu navigasi
+- 🔮 **Vision AI Description Generator** - Optional AI-powered report description from uploaded photos
 
 ### For Admin
 
@@ -157,7 +159,39 @@ INSERT INTO admin (username, password, nama)
 VALUES ('admin', '$2y$10$...bcrypt_hash...', 'Administrator');
 ```
 
-### 5. Start Server
+### 5. Configure AI Features (Optional)
+
+**AI Chatbot Setup:**
+
+```bash
+# Copy chatbot configuration template
+cp config/chatbot.example.php config/chatbot.php
+
+# Edit and add your OpenAI API key
+nano config/chatbot.php
+```
+
+**Vision AI Setup:**
+
+```bash
+# Copy Vision AI configuration template
+cp config/vision.example.php config/vision.php
+
+# Edit and add your OpenAI API key
+nano config/vision.php
+```
+
+Update API keys in both files:
+
+```php
+'openai_api_key' => 'sk-proj-YOUR_OPENAI_API_KEY_HERE',
+```
+
+> 📖 See full documentation:
+> - [Chatbot Documentation](docs/CHATBOT.md)
+> - [Vision AI Documentation](docs/VISION_AI.md)
+
+### 6. Start Server
 
 **XAMPP:**
 
@@ -693,6 +727,25 @@ Retrieve images stored in database as BLOB.
 - **Session Timeout**: Logout otomatis saat browser ditutup
 - **Protected Routes**: Semua halaman admin cek `$_SESSION['admin_id']`
 - **CSRF Protection**: Method check (POST only) untuk form submission
+
+### AI Chatbot Security
+
+- **API Key Protection**: OpenAI API key disimpan di `config/chatbot.php` (not in public folder)
+- **Rate Limiting**: 10 pesan per 5 menit per session untuk mencegah spam
+- **Input Validation**: Max 500 karakter, sanitasi HTML entities
+- **Scope Restriction**: System prompt membatasi chatbot hanya menjawab FAQ LaporWarga
+- **No Data Access**: Chatbot tidak bisa akses/ubah data database
+- **Error Handling**: Tidak expose internal error messages ke user
+
+### Vision AI Security
+
+- **API Key Protection**: OpenAI API key disimpan di `config/vision.php` (gitignored)
+- **Manual Trigger Only**: Vision AI hanya aktif saat user klik button (no auto-submit)
+- **File Validation**: Strict file type (JPG, PNG) dan size (max 5MB) validation
+- **Output Sanitization**: HTML encoding dengan `htmlspecialchars()` untuk mencegah XSS
+- **Cost Control**: One request per photo, low max tokens (100), manual trigger
+- **Scope Limitation**: System prompt membatasi AI hanya deskripsi visual netral
+- **No Auto-submit**: AI result masuk textarea, user wajib review dan submit manual
 
 ### Input Validation & Sanitization
 

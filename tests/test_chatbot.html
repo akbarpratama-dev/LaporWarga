@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbot Test - LaporWarga</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .test-container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #d32f2f;
+        border-bottom: 3px solid #d32f2f;
+        padding-bottom: 10px;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 20px;
+        background: #f9f9f9;
+        border-left: 4px solid #d32f2f;
+      }
+      .success {
+        color: green;
+        font-weight: bold;
+      }
+      .error {
+        color: red;
+        font-weight: bold;
+      }
+      .info {
+        color: #666;
+      }
+      button {
+        background: #d32f2f;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #b71c1c;
+      }
+      #result {
+        margin-top: 20px;
+        padding: 15px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        min-height: 100px;
+      }
+      .code-block {
+        background: #f4f4f4;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        margin: 10px 0;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-container">
+      <h1>🤖 Chatbot API Test</h1>
+
+      <div class="test-section">
+        <h2>Setup Checklist</h2>
+        <p class="info">Before testing, ensure:</p>
+        <ul>
+          <li>✅ <code>config/chatbot.php</code> exists with valid API key</li>
+          <li>✅ <code>api/chatbot.php</code> exists</li>
+          <li>✅ XAMPP/Apache is running</li>
+          <li>✅ Internet connection available</li>
+        </ul>
+      </div>
+
+      <div class="test-section">
+        <h2>Quick Tests</h2>
+
+        <h3>Test 1: Valid Question</h3>
+        <button onclick="testValidQuestion()">Send: "Bagaimana cara melapor?"</button>
+
+        <h3>Test 2: Out-of-Scope Question</h3>
+        <button onclick="testOutOfScope()">Send: "Siapa presiden Indonesia?"</button>
+
+        <h3>Test 3: Empty Message</h3>
+        <button onclick="testEmpty()">Send: "" (empty)</button>
+
+        <h3>Test 4: Very Long Message</h3>
+        <button onclick="testLongMessage()">Send: 600 characters</button>
+
+        <h3>Test 5: Rate Limit</h3>
+        <button onclick="testRateLimit()">Send 11 messages quickly</button>
+        <button onclick="clearSession()">Clear Session</button>
+      </div>
+
+      <div class="test-section">
+        <h2>Result</h2>
+        <div id="result">Click a test button above...</div>
+      </div>
+    </div>
+
+    <script>
+      const API_URL = "../api/chatbot.php";
+      const resultDiv = document.getElementById("result");
+
+      function displayResult(title, data, isError = false) {
+        const color = isError ? "red" : "green";
+        resultDiv.innerHTML = `
+                <h3 style="color: ${color};">${title}</h3>
+                <div class="code-block">${JSON.stringify(data, null, 2)}</div>
+            `;
+      }
+
+      async function sendMessage(message) {
+        try {
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: message }),
+          });
+
+          const data = await response.json();
+
+          return {
+            status: response.status,
+            ok: response.ok,
+            data: data,
+          };
+        } catch (error) {
+          return {
+            status: 0,
+            ok: false,
+            error: error.message,
+          };
+        }
+      }
+
+      async function testValidQuestion() {
+        displayResult("⏳ Testing...", { status: "Sending request..." });
+
+        const result = await sendMessage("Bagaimana cara melapor?");
+
+        if (result.ok && result.data.success) {
+          displayResult("✅ Test 1: PASSED", {
+            status: result.status,
+            response: result.data.message,
+            note: "Bot should explain how to submit a report",
+          });
+        } else {
+          displayResult("❌ Test 1: FAILED", result, true);
+        }
+      }
+
+      async function testOutOfScope() {
+        displayResult("⏳ Testing...", { status: "Sending request..." });
+
+        const result = await sendMessage("Siapa presiden Indonesia?");
+
+        if (result.ok && result.data.success) {
+          const isRefused = result.data.message.toLowerCase().includes("hanya") || result.data.message.toLowerCase().includes("tidak dapat");
+
+          if (isRefused) {
+            displayResult("✅ Test 2: PASSED", {
+              status: result.status,
+              response: result.data.message,
+              note: "Bot correctly refused out-of-scope question",
+            });
+          } else {
+            displayResult("⚠️ Test 2: WARNING", {
+              response: result.data.message,
+              note: "Bot answered but should have refused",
+            });
+          }
+        } else {
+          displayResult("❌ Test 2: FAILED", result, true);
+        }
+      }
+
+      async function testEmpty() {
+        displayResult("⏳ Testing...", { status: "Sending request..." });
+
+        const result = await sendMessage("");
+
+        if (!result.ok && result.data.error) {
+          displayResult("✅ Test 3: PASSED", {
+            status: result.status,
+            error: result.data.error,
+            note: "Empty message correctly rejected",
+          });
+        } else {
+          displayResult(
+            "❌ Test 3: FAILED",
+            {
+              note: "Should reject empty message",
+              result: result,
+            },
+            true
+          );
+        }
+      }
+
+      async function testLongMessage() {
+        displayResult("⏳ Testing...", { status: "Sending request..." });
+
+        const longMsg = "A".repeat(600); // 600 characters
+        const result = await sendMessage(longMsg);
+
+        if (!result.ok && result.data.error) {
+          displayResult("✅ Test 4: PASSED", {
+            status: result.status,
+            error: result.data.error,
+            messageLength: longMsg.length,
+            note: "Long message correctly rejected",
+          });
+        } else {
+          displayResult(
+            "❌ Test 4: FAILED",
+            {
+              note: "Should reject message > 500 chars",
+              result: result,
+            },
+            true
+          );
+        }
+      }
+
+      async function testRateLimit() {
+        displayResult("⏳ Testing rate limit...", { status: "Sending 11 messages..." });
+
+        const results = [];
+
+        for (let i = 1; i <= 11; i++) {
+          const result = await sendMessage(`Test message ${i}`);
+          results.push({
+            message: i,
+            status: result.status,
+            ok: result.ok,
+            error: result.data.error || null,
+          });
+        }
+
+        const blocked = results.filter((r) => r.status === 429);
+
+        if (blocked.length > 0) {
+          displayResult("✅ Test 5: PASSED", {
+            totalSent: 11,
+            blocked: blocked.length,
+            note: "Rate limiting is working",
+            blockedMessages: blocked.map((b) => b.message),
+          });
+        } else {
+          displayResult("⚠️ Test 5: WARNING", {
+            note: "Rate limit did not trigger (may need to wait for window reset)",
+            results: results,
+          });
+        }
+      }
+
+      async function clearSession() {
+        // Simple page reload to clear session
+        if (confirm("Reload page to clear session?")) {
+          window.location.reload();
+        }
+      }
+    </script>
+  </body>
+</html>
