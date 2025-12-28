@@ -188,6 +188,7 @@ Update API keys in both files:
 ```
 
 > 📖 See full documentation:
+>
 > - [Chatbot Documentation](docs/CHATBOT.md)
 > - [Vision AI Documentation](docs/VISION_AI.md)
 

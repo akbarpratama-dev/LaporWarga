@@ -70,9 +70,11 @@ LaporWarga1/
 ## 🔌 API Endpoint Specification
 
 ### Endpoint
+
 `POST /api/vision_deskripsi.php`
 
 ### Request
+
 ```http
 POST /api/vision_deskripsi.php HTTP/1.1
 Content-Type: multipart/form-data
@@ -81,6 +83,7 @@ foto: [binary image file]
 ```
 
 ### Success Response (200 OK)
+
 ```json
 {
   "success": true,
@@ -92,6 +95,7 @@ foto: [binary image file]
 ### Error Responses
 
 **Missing Config**
+
 ```json
 {
   "success": false,
@@ -100,6 +104,7 @@ foto: [binary image file]
 ```
 
 **Invalid File Type**
+
 ```json
 {
   "success": false,
@@ -108,6 +113,7 @@ foto: [binary image file]
 ```
 
 **File Too Large**
+
 ```json
 {
   "success": false,
@@ -116,6 +122,7 @@ foto: [binary image file]
 ```
 
 **API Error**
+
 ```json
 {
   "success": false,
@@ -130,26 +137,22 @@ foto: [binary image file]
 ```html
 <!-- Photo Upload Field -->
 <div class="form-group">
-    <label for="foto">Upload Foto *</label>
-    <input type="file" id="foto" name="foto" accept="image/jpeg,image/png,image/jpg" required>
-    <small class="form-text">Unggah foto kondisi di lapangan. Anda dapat menggunakan AI untuk membantu menyusun deskripsi laporan.</small>
-    <small class="form-text">Format: JPG, PNG. Max 5MB</small>
+  <label for="foto">Upload Foto *</label>
+  <input type="file" id="foto" name="foto" accept="image/jpeg,image/png,image/jpg" required />
+  <small class="form-text">Unggah foto kondisi di lapangan. Anda dapat menggunakan AI untuk membantu menyusun deskripsi laporan.</small>
+  <small class="form-text">Format: JPG, PNG. Max 5MB</small>
 </div>
 
 <!-- Vision AI Button (hidden by default) -->
 <div class="form-group" id="vision-ai-container" style="display: none;">
-    <button type="button" id="btn-vision-ai" class="btn btn-secondary" disabled>
-        <i class="ri-magic-line"></i> Isi Deskripsi dari Foto (AI)
-    </button>
-    <small class="form-text">
-        <i class="ri-information-line"></i> Hasil dapat diedit sebelum dikirim
-    </small>
+  <button type="button" id="btn-vision-ai" class="btn btn-secondary" disabled><i class="ri-magic-line"></i> Isi Deskripsi dari Foto (AI)</button>
+  <small class="form-text"> <i class="ri-information-line"></i> Hasil dapat diedit sebelum dikirim </small>
 </div>
 
 <!-- Description Textarea -->
 <div class="form-group">
-    <label for="deskripsi">Deskripsi Masalah *</label>
-    <textarea id="deskripsi" name="deskripsi" rows="5" required></textarea>
+  <label for="deskripsi">Deskripsi Masalah *</label>
+  <textarea id="deskripsi" name="deskripsi" rows="5" required></textarea>
 </div>
 ```
 
@@ -184,23 +187,56 @@ foto: [binary image file]
 /* Key Styles: */
 
 #vision-ai-container
-  - Hidden by default (display: none)
-  - Shown via JavaScript when photo selected
-
-#btn-vision-ai
-  - Secondary button styling (red)
-  - Disabled state with opacity
-  - Loading state with spinner animation
-
-.vision-notification
-  - Fixed position (top-right)
-  - Slide-in animation
-  - Success (green) / Error (red) variants
+  -
+  Hidden
+  by
+  default
+  (display: none)
+  -
+  Shown
+  via
+  JavaScript
+  when
+  photo
+  selected
+  #btn-vision-ai
+  -
+  Secondary
+  button
+  styling
+  (red)
+  -
+  Disabled
+  state
+  with
+  opacity
+  -
+  Loading
+  state
+  with
+  spinner
+  animation
+  .vision-notification
+  -
+  Fixed
+  position
+  (top-right)
+  -
+  Slide-in
+  animation
+  -
+  Success
+  (green)
+  /
+  Error
+  (red)
+  variants;
 ```
 
 ## 🔐 Security Measures
 
 ### 1. Configuration Protection
+
 ```php
 // config/vision.php is gitignored
 // API key never exposed to frontend
@@ -208,6 +244,7 @@ $config = require __DIR__ . '/../config/vision.php';
 ```
 
 ### 2. File Validation
+
 ```php
 // Type validation
 $allowed_types = ['image/jpeg', 'image/png', 'image/jpg'];
@@ -220,12 +257,14 @@ if ($file['size'] > 5242880) { // 5MB
 ```
 
 ### 3. Output Sanitization
+
 ```php
 // HTML encoding to prevent XSS
 $description = htmlspecialchars($description, ENT_QUOTES, 'UTF-8');
 ```
 
 ### 4. System Prompt Restriction
+
 ```php
 // Limit AI behavior
 'system_prompt' => 'Anda adalah asisten yang membantu warga...
@@ -238,6 +277,7 @@ ATURAN KETAT:
 ## 💰 Cost Optimization
 
 ### Settings
+
 ```php
 'openai_model' => 'gpt-4o-mini',  // Cheaper vision model
 'temperature' => 0.2,              // Consistent, no retries needed
@@ -245,12 +285,14 @@ ATURAN KETAT:
 ```
 
 ### Trigger Control
+
 - Manual button click (no auto-generation)
 - One request per photo
 - No retry loops
 - User confirms before replacing text
 
 ### Estimated Cost
+
 - gpt-4o-mini: ~$0.01 per request
 - 100 reports/day: ~$1/day
 - 3000 reports/month: ~$30/month
@@ -287,20 +329,26 @@ ATURAN KETAT:
 ## 🐛 Troubleshooting
 
 ### Problem: Button doesn't appear
+
 **Solution:**
+
 - Check photo is selected
 - Check vision.js is loaded
 - Check browser console for errors
 
 ### Problem: API returns error
+
 **Solution:**
+
 - Verify config/vision.php exists
 - Check API key is valid
 - Check OpenAI account has credits
 - Check PHP error log
 
 ### Problem: Description not generated
+
 **Solution:**
+
 - Check network tab in browser
 - Verify file size < 5MB
 - Check API response format
@@ -309,18 +357,21 @@ ATURAN KETAT:
 ## 📊 Metrics to Monitor
 
 ### Usage Metrics
+
 - Number of AI generations per day
 - Success vs error rate
 - Average response time
 - Most common error types
 
 ### Cost Metrics
+
 - Total API calls per month
 - Total tokens used
 - Cost per successful generation
 - Cost per report submitted
 
 ### Quality Metrics
+
 - User edit rate (how often AI text is modified)
 - User satisfaction (optional feedback)
 - Description length variance
@@ -331,20 +382,24 @@ ATURAN KETAT:
 ### Possible Extensions
 
 1. **Database Tracking**
+
    ```sql
    ALTER TABLE laporan ADD COLUMN ai_digunakan BOOLEAN DEFAULT FALSE;
    ALTER TABLE laporan ADD COLUMN deskripsi_ai TEXT;
    ```
 
 2. **Multi-language Support**
+
    - Add language selection
    - Update system prompt per language
 
 3. **A/B Testing**
+
    - Show Vision AI to 50% of users
    - Measure completion rates
 
 4. **Image Preview**
+
    - Show thumbnail before generation
    - Allow crop/rotate before AI call
 
@@ -355,18 +410,21 @@ ATURAN KETAT:
 ## 📝 Code Comments Guide
 
 ### Backend (vision_deskripsi.php)
+
 - Config validation comments
 - File validation logic
 - API request structure
 - Error handling cases
 
 ### Frontend (vision.js)
+
 - Event listener setup
 - State management
 - API call handling
 - UI update logic
 
 ### CSS (style.css)
+
 - Section headers for organization
 - Animation keyframes documented
 - Responsive breakpoints noted
@@ -400,6 +458,7 @@ Before deploying to production:
 ### Assignment Context
 
 Perfect for demonstrating:
+
 - API integration skills
 - Security best practices
 - User-centered design
@@ -410,11 +469,13 @@ Perfect for demonstrating:
 ## 📞 Support
 
 ### Documentation Resources
+
 - Full docs: `docs/VISION_AI.md`
 - Quick start: `docs/VISION_AI_QUICKSTART.md`
 - Test suite: `tests/test_vision_ai.html`
 
 ### External Resources
+
 - [OpenAI Vision API Docs](https://platform.openai.com/docs/guides/vision)
 - [PHP cURL Manual](https://www.php.net/manual/en/book.curl.php)
 - [Fetch API MDN](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)

@@ -70,7 +70,7 @@ $laporan_selesai = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
             <div class="hero-right">
-                <img src="assets/images/asset 1.png" alt="Ilustrasi lingkungan" class="hero-image" onerror="this.style.display='none'">
+                <img src="assets/images/gif (3).gif" alt="Ilustrasi lingkungan" class="hero-image" onerror="this.style.display='none'">
             </div>
         </div>
     </section>
@@ -386,7 +386,7 @@ $laporan_selesai = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <i class="ri-robot-line"></i>
                     </div>
                     <div class="message-content">
-                        <p>Halo! 👋 Saya asisten virtual LaporWarga. Ada yang bisa saya bantu?</p>
+                        <p>Halo!, Saya asisten virtual LaporWarga. Ada yang bisa saya bantu?</p>
                         <div class="message-suggestions">
                             <button class="suggestion-btn" data-msg="Bagaimana cara melapor?">Cara melapor</button>
                             <button class="suggestion-btn" data-msg="Bagaimana cara cek status laporan?">Cek status</button>

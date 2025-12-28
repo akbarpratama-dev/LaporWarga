@@ -263,7 +263,7 @@ a {
    HERO SECTION
    ============================================ */
 .hero {
-  background: white;
+  background: rgb(255, 253, 251);
   color: var(--primary-color);
   padding: 6rem 0;
 }
@@ -321,7 +321,7 @@ a {
 }
 
 .hero-right .hero-image {
-  width: 600px;
+  width: 900px;
 }
 
 @media (min-width: 1024px) {
@@ -2023,7 +2023,6 @@ html {
     font-size: 22px;
   }
 
-
   .chatbot-tooltip {
     display: none;
   }
@@ -2146,4 +2145,3 @@ html {
     max-width: none;
   }
 }
-

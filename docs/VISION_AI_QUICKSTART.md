@@ -32,15 +32,18 @@ For full documentation, see [VISION_AI.md](VISION_AI.md)
 ## 🔧 Troubleshooting
 
 **Button not appearing?**
+
 - Make sure you upload a photo first
 - Check browser console for errors
 
 **API Error?**
+
 - Verify API key is correct
 - Check OpenAI account has credits
 - See error in browser network tab
 
 **File upload error?**
+
 - Use JPG or PNG only
 - File must be under 5MB
 - Try a different image
@@ -58,7 +61,7 @@ For full documentation, see [VISION_AI.md](VISION_AI.md)
 ✅ User can edit results  
 ✅ Manual trigger (click button)  
 ✅ No auto-submit  
-✅ Safe and controlled  
+✅ Safe and controlled
 
 ## 🔒 Security
 
