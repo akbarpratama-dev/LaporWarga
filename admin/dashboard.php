@@ -289,11 +289,11 @@ if (empty($categoryData)) {
       <p>Panel Admin</p>
     </div>
     <nav class="sidebar-nav">
-      <a href="dashboard.php" class="sidebar-link active"><i class="ri-dashboard-line"></i> Dashboard</a>
-      <a href="laporan_masuk.php" class="sidebar-link"><i class="ri-inbox-archive-line"></i> Laporan Masuk</a>
-      <a href="laporan_selesai.php" class="sidebar-link"><i class="ri-checkbox-circle-line"></i> Laporan Selesai</a>
-      <a href="info_warga.php" class="sidebar-link"><i class="ri-megaphone-line"></i> Info Warga</a>
-      <a href="logout.php" class="sidebar-link"><i class="ri-logout-box-line"></i> Logout</a>
+      <a href="/admin/dashboard.php" class="sidebar-link active"><i class="ri-dashboard-line"></i> Dashboard</a>
+      <a href="/admin/laporan_masuk.php" class="sidebar-link"><i class="ri-inbox-archive-line"></i> Laporan Masuk</a>
+      <a href="/admin/laporan_selesai.php" class="sidebar-link"><i class="ri-checkbox-circle-line"></i> Laporan Selesai</a>
+      <a href="/admin/info_warga.php" class="sidebar-link"><i class="ri-megaphone-line"></i> Info Warga</a>
+      <a href="/admin/logout.php" class="sidebar-link"><i class="ri-logout-box-line"></i> Logout</a>
     </nav>
   </aside>
 
