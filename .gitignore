@@ -5,15 +5,6 @@
 uploads/*
 !uploads/.gitkeep
 
-# Database configuration (file asli dengan password)
-config/database.php
-
-# Chatbot configuration (contains OpenAI API key)
-config/chatbot.php
-
-# Vision AI configuration (contains OpenAI API key)
-config/vision.php
-docs/
 # IDE
 .vscode/
 .idea/

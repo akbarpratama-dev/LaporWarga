@@ -1,0 +1,88 @@
+`````
+
+### 6. **README untuk Deployment** - Tambahkan Panduan
+
+````markdown
+<vscode_codeblock_uri>file:///Applications/XAMPP/xamppfiles/htdocs/LaporWarga1/DEPLOYMENT.md</vscode_codeblock_uri># 🚀 Deployment Guide - LaporWarga
+
+## Prerequisites
+- VPS Ubuntu 22.04
+- Domain (opsional)
+- OpenAI API Key
+
+## Step 1: Setup VPS
+
+```bash
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
+
+# Install Docker Compose
+apt install docker-compose -y
+```
+
+## Step 2: Clone Repository
+
+```bash
+cd /opt
+git clone https://github.com/USERNAME/REPO.git laporwarga
+cd laporwarga
+```
+
+## Step 3: Create .env File
+
+```bash
+nano .env
+```
+
+Isi dengan:
+
+```env
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=http://YOUR_IP_OR_DOMAIN
+
+DB_HOST=db
+DB_PORT=3306
+DB_DATABASE=LaporWarga2
+DB_USERNAME=laporwarga_app
+DB_PASSWORD=STRONG_PASSWORD_HERE
+DB_ROOT_PASSWORD=STRONG_ROOT_PASSWORD_HERE
+
+OPENAI_API_KEY=YOUR_NEW_API_KEY_HERE
+```
+
+## Step 4: Run Docker
+
+```bash
+docker-compose up -d
+```
+
+## Step 5: Import Database
+
+```bash
+docker exec -i laporwarga_db mysql -uroot -p"YOUR_ROOT_PASSWORD" LaporWarga2 < database/LaporWarga2.sql
+```
+
+## Step 6: Verify
+
+Open browser: `http://YOUR_IP`
+
+## Troubleshooting
+
+### Check logs
+```bash
+docker-compose logs -f app
+docker-compose logs -f db
+```
+
+### Restart containers
+```bash
+docker-compose restart
+```
+
+### Check database connection
+```bash
+docker exec -it laporwarga_db mysql -uroot -p
+```
+`````

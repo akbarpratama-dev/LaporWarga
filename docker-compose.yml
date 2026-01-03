@@ -9,21 +9,43 @@ services:
       - "80:80"
     volumes:
       - .:/var/www/html
-    env_file:
-      - .env
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - APP_ENV=${APP_ENV}
+      - APP_DEBUG=${APP_DEBUG}
     depends_on:
       - db
     command: >
-      bash -c "docker-php-ext-install pdo pdo_mysql && apache2-foreground"
+      bash -c "
+      docker-php-ext-install pdo pdo_mysql &&
+      docker-php-ext-install mysqli &&
+      a2enmod rewrite &&
+      echo '<VirtualHost *:80>' > /etc/apache2/sites-available/000-default.conf &&
+      echo '    DocumentRoot /var/www/html/public' >> /etc/apache2/sites-available/000-default.conf &&
+      echo '    <Directory /var/www/html/public>' >> /etc/apache2/sites-available/000-default.conf &&
+      echo '        Options Indexes FollowSymLinks' >> /etc/apache2/sites-available/000-default.conf &&
+      echo '        AllowOverride All' >> /etc/apache2/sites-available/000-default.conf &&
+      echo '        Require all granted' >> /etc/apache2/sites-available/000-default.conf &&
+      echo '    </Directory>' >> /etc/apache2/sites-available/000-default.conf &&
+      echo '</VirtualHost>' >> /etc/apache2/sites-available/000-default.conf &&
+      chown -R www-data:www-data /var/www/html/uploads &&
+      chmod -R 755 /var/www/html/uploads &&
+      apache2-foreground
+      "
 
   db:
     image: mysql:8.0
     container_name: laporwarga_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD} # root
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_USER: ${DB_USERNAME} # user aplikasi
+      MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
