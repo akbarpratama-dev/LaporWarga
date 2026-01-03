@@ -1,0 +1,23 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Jangan redirect jika akses folder admin
+    RewriteCond %{REQUEST_URI} ^/admin/ [NC]
+    RewriteRule ^ - [L]
+    
+    # Jangan redirect jika akses folder process
+    RewriteCond %{REQUEST_URI} ^/process/ [NC]
+    RewriteRule ^ - [L]
+    
+    # Jangan redirect jika akses folder config
+    RewriteCond %{REQUEST_URI} ^/config/ [NC]
+    RewriteRule ^ - [L]
+    
+    # Redirect semua request lain ke public/
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ /public/$1 [L]
+</IfModule>
+
+Options -Indexes
