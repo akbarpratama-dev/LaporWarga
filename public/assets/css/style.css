@@ -73,7 +73,7 @@ body {
 }
 
 img {
-  max-width: 100%;
+  max-width: 130%;
   height: auto;
 }
 
@@ -270,7 +270,7 @@ a {
 
 @media (min-width: 1024px) {
   .hero {
-    padding: 8rem 0;
+    padding: 5rem 0 7rem 0;
   }
 }
 
@@ -321,7 +321,7 @@ a {
 }
 
 .hero-right .hero-image {
-  width: 900px;
+  width: 1500px;
 }
 
 @media (min-width: 1024px) {

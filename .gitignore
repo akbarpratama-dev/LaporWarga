@@ -13,7 +13,7 @@ config/chatbot.php
 
 # Vision AI configuration (contains OpenAI API key)
 config/vision.php
-
+docs/
 # IDE
 .vscode/
 .idea/
