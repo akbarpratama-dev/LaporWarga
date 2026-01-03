@@ -11,6 +11,9 @@ require_once '../config/database.php';
 $database = new Database();
 $conn = $database->getConnection();
 
+// Disable ONLY_FULL_GROUP_BY untuk session ini
+$conn->exec("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
+
 // Total laporan per status
 $total = $conn->query("SELECT COUNT(*) as total FROM laporan")->fetch()['total'];
 $diterima = $conn->query("SELECT COUNT(*) as total FROM laporan WHERE status = 'diterima'")->fetch()['total'];
@@ -43,27 +46,55 @@ $categoryData = $conn->query("
     ORDER BY count DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-// Laporan per bulan (6 bulan terakhir)
+// Laporan per bulan (6 bulan terakhir) - FIXED
 $monthlyData = $conn->query("
     SELECT 
         DATE_FORMAT(tanggal_lapor, '%b %Y') as month_label,
         COUNT(*) as count
     FROM laporan
     WHERE tanggal_lapor >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-    GROUP BY DATE_FORMAT(tanggal_lapor, '%Y-%m')
-    ORDER BY tanggal_lapor ASC
+    GROUP BY YEAR(tanggal_lapor), MONTH(tanggal_lapor)
+    ORDER BY YEAR(tanggal_lapor) ASC, MONTH(tanggal_lapor) ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-// Laporan per minggu (4 minggu terakhir)
+// Laporan per minggu (4 minggu terakhir) - FIXED
 $weeklyData = $conn->query("
     SELECT 
-        CONCAT('Minggu ', WEEK(tanggal_lapor, 1) - WEEK(DATE_SUB(NOW(), INTERVAL 4 WEEK), 1) + 1) as week_start,
+        CONCAT('Minggu ', (@row_number:=@row_number + 1)) as week_start,
         COUNT(*) as count
     FROM laporan
+    CROSS JOIN (SELECT @row_number:=0) r
     WHERE tanggal_lapor >= DATE_SUB(NOW(), INTERVAL 4 WEEK)
-    GROUP BY WEEK(tanggal_lapor, 1)
-    ORDER BY tanggal_lapor ASC
+    GROUP BY YEARWEEK(tanggal_lapor, 1)
+    ORDER BY YEARWEEK(tanggal_lapor, 1) ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
+
+// Jika data kosong, buat dummy data
+if (empty($weeklyData)) {
+    $weeklyData = [
+        ['week_start' => 'Minggu 1', 'count' => 0],
+        ['week_start' => 'Minggu 2', 'count' => 0],
+        ['week_start' => 'Minggu 3', 'count' => 0],
+        ['week_start' => 'Minggu 4', 'count' => 0],
+    ];
+}
+
+if (empty($monthlyData)) {
+    $monthlyData = [
+        ['month_label' => date('M Y', strtotime('-5 months')), 'count' => 0],
+        ['month_label' => date('M Y', strtotime('-4 months')), 'count' => 0],
+        ['month_label' => date('M Y', strtotime('-3 months')), 'count' => 0],
+        ['month_label' => date('M Y', strtotime('-2 months')), 'count' => 0],
+        ['month_label' => date('M Y', strtotime('-1 month')), 'count' => 0],
+        ['month_label' => date('M Y'), 'count' => 0],
+    ];
+}
+
+if (empty($categoryData)) {
+    $categoryData = [
+        ['kategori' => 'Belum ada data', 'count' => 0],
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -307,7 +338,7 @@ $weeklyData = $conn->query("
           <?php 
           $maxWeekly = max(array_column($weeklyData, 'count') ?: [1]);
           foreach ($weeklyData as $week): 
-            $height = ($week['count'] / $maxWeekly) * 100;
+            $height = $maxWeekly > 0 ? ($week['count'] / $maxWeekly) * 100 : 0;
           ?>
           <div class="bar-item">
             <div class="bar" style="height: <?php echo $height; ?>%;">
@@ -333,7 +364,7 @@ $weeklyData = $conn->query("
           ?>
           <svg class="donut-svg" viewBox="0 0 180 180">
             <circle cx="90" cy="90" r="70" fill="none" stroke="#e5e7eb" stroke-width="28"></circle>
-            <?php foreach ($categoryData as $i => $cat): 
+            <?php if ($totalCategory > 0): foreach ($categoryData as $i => $cat): 
               $percentage = ($cat['count'] / $totalCategory) * 100;
               $strokeDasharray = ($percentage / 100) * $circumference;
               $strokeDashoffset = -$currentOffset;
@@ -352,13 +383,13 @@ $weeklyData = $conn->query("
               transform="rotate(-90 90 90)"
               style="transition: stroke-dashoffset 0.6s ease;">
             </circle>
-            <?php endforeach; ?>
+            <?php endforeach; endif; ?>
             <text x="90" y="85" text-anchor="middle" font-size="24" font-weight="700" fill="#1f2937"><?php echo $totalCategory; ?></text>
             <text x="90" y="105" text-anchor="middle" font-size="12" fill="#6b7280">Total</text>
           </svg>
           <div class="donut-legend">
             <?php foreach ($categoryData as $i => $cat): 
-              $percentage = round(($cat['count'] / $totalCategory) * 100, 1);
+              $percentage = $totalCategory > 0 ? round(($cat['count'] / $totalCategory) * 100, 1) : 0;
               $color = $colors[$i % count($colors)];
             ?>
             <div class="legend-item">
@@ -381,7 +412,7 @@ $weeklyData = $conn->query("
         <?php 
         $maxMonthly = max(array_column($monthlyData, 'count') ?: [1]);
         foreach ($monthlyData as $month): 
-          $height = ($month['count'] / $maxMonthly) * 100;
+          $height = $maxMonthly > 0 ? ($month['count'] / $maxMonthly) * 100 : 0;
         ?>
         <div class="bar-item">
           <div class="bar" style="height: <?php echo $height; ?>%;">
