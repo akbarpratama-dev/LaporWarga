@@ -26,3 +26,7 @@ error_log
 *.tmp
 *.bak
 *~
+
+# Environment variables
+.env
+.env.*
