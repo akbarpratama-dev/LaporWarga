@@ -241,6 +241,17 @@ a {
   box-shadow: var(--shadow-lg);
 }
 
+/* Danger Button (used in admin delete actions) */
+.btn-danger {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.btn-danger:hover {
+  opacity: 0.9;
+  box-shadow: var(--shadow-lg);
+}
+
 /* Button Sizes */
 .btn-sm {
   padding: 0.5rem 1rem;
@@ -798,24 +809,29 @@ a {
   box-shadow: var(--shadow-sm);
 }
 
-.table {
+.table,
+.admin-table {
   width: 100%;
   border-collapse: collapse;
   background-color: white;
 }
 
-.table thead {
+.table thead,
+.admin-table thead {
   background-color: var(--bg-gray);
 }
 
 .table th,
-.table td {
+.table td,
+.admin-table th,
+.admin-table td {
   padding: 1rem;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
 }
 
-.table th {
+.table th,
+.admin-table th {
   font-weight: 600;
   color: var(--text-dark);
   font-size: 0.875rem;
@@ -823,16 +839,29 @@ a {
   letter-spacing: 0.05em;
 }
 
-.table td {
+.table td,
+.admin-table td {
   color: var(--text-dark);
 }
 
-.table tbody tr {
+.table tbody tr,
+.admin-table tbody tr {
   transition: var(--transition-colors);
 }
 
-.table tbody tr:hover {
+.table tbody tr:nth-child(even),
+.admin-table tbody tr:nth-child(even) {
   background-color: var(--bg-light);
+}
+
+.table tbody tr:hover,
+.admin-table tbody tr:hover {
+  background-color: var(--bg-gray);
+}
+
+.table td:last-child,
+.admin-table td:last-child {
+  white-space: nowrap;
 }
 
 /* ============================================
@@ -869,6 +898,13 @@ a {
 .badge-success {
   background-color: var(--success-color);
   color: white;
+}
+
+/* Neutral badge (used for category labels) */
+.badge-secondary {
+  background-color: var(--bg-gray);
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
 }
 
 /* ============================================
@@ -1414,12 +1450,15 @@ a {
   font-size: 1.5rem;
 }
 
-.admin-page .table {
+.admin-page .table,
+.admin-page .admin-table {
   font-size: 0.875rem;
 }
 
 .admin-page .table th,
-.admin-page .table td {
+.admin-page .table td,
+.admin-page .admin-table th,
+.admin-page .admin-table td {
   padding: 0.75rem;
 }
 
