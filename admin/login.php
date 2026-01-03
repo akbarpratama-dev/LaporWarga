@@ -1,8 +1,6 @@
 <?php
-<?php
 session_start();
 
-// Redirect jika sudah login
 if (isset($_SESSION['admin_logged_in'])) {
     header("Location: dashboard.php");
     exit();
@@ -14,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     
-    // Hardcoded admin credentials
     $admin_username = 'admin';
     $admin_password = 'admin123';
     
