@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Login Admin - LaporWarga</title>
     <link rel="stylesheet" href="/public/assets/css/style.css">
 </head>
-<body>
+<body class="login-page">
     <div class="login-container">
         <div class="login-box">
             <h1>Login Admin</h1>
