@@ -1,51 +1,46 @@
+
 <?php
-/**
- * Image serving script - retrieves images from database BLOB
- * Usage: image.php?id=123&type=foto (or foto_after)
- */
 require_once '../config/database.php';
-
-// Get parameters
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$type = isset($_GET['type']) && in_array($_GET['type'], ['foto', 'foto_after']) ? $_GET['type'] : 'foto';
-
-if ($id <= 0) {
-    http_response_code(400);
-    exit('Invalid ID');
-}
 
 $database = new Database();
 $conn = $database->getConnection();
 
-// Determine column names
-$blobCol = ($type === 'foto_after') ? 'foto_after_blob' : 'foto_blob';
-$mimeCol = ($type === 'foto_after') ? 'foto_after_mime' : 'foto_mime';
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-try {
-    $query = "SELECT {$blobCol} as image_data, {$mimeCol} as mime_type FROM laporan WHERE id = :id";
-    $stmt = $conn->prepare($query);
+if ($id > 0) {
+    $stmt = $conn->prepare("SELECT foto FROM laporan WHERE id = :id");
     $stmt->bindParam(':id', $id, PDO::PARAM_INT);
     $stmt->execute();
     
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if ($row && $row['image_data']) {
-        // Set proper headers
-        header('Content-Type: ' . ($row['mime_type'] ?: 'image/jpeg'));
-        header('Content-Length: ' . strlen($row['image_data']));
-        header('Cache-Control: public, max-age=86400'); // Cache 1 day
+    if ($row && $row['foto']) {
+        // Path absolut ke file
+        $filepath = __DIR__ . '/../uploads/' . $row['foto'];
         
-        // Output image
-        echo $row['image_data'];
-        exit();
-    } else {
-        // No image found - return 404
-        http_response_code(404);
-        exit('Image not found');
+        if (file_exists($filepath)) {
+            // Detect MIME type
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $filepath);
+            finfo_close($finfo);
+            
+            header('Content-Type: ' . $mimeType);
+            header('Content-Length: ' . filesize($filepath));
+            header('Cache-Control: public, max-age=86400');
+            
+            readfile($filepath);
+            exit;
+        }
     }
-} catch (PDOException $e) {
-    error_log('Image fetch error: ' . $e->getMessage());
-    http_response_code(500);
-    exit('Database error');
 }
+
+// Default placeholder jika tidak ada gambar
+header('Content-Type: image/svg+xml');
+echo '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+    <rect width="400" height="300" fill="#f0f0f0"/>
+    <text x="50%" y="50%" text-anchor="middle" font-family="Arial" font-size="20" fill="#999">
+        Gambar tidak tersedia
+    </text>
+</svg>';
+exit;
 ?>
