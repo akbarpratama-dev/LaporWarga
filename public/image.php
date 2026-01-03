@@ -6,20 +6,21 @@ $database = new Database();
 $conn = $database->getConnection();
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$type = isset($_GET['type']) ? $_GET['type'] : 'foto';
 
 if ($id > 0) {
-    $stmt = $conn->prepare("SELECT foto FROM laporan WHERE id = :id");
+    $column = ($type === 'foto_after') ? 'foto_after' : 'foto';
+    
+    $stmt = $conn->prepare("SELECT {$column} as foto FROM laporan WHERE id = :id");
     $stmt->bindParam(':id', $id, PDO::PARAM_INT);
     $stmt->execute();
     
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($row && $row['foto']) {
-        // Path absolut ke file
         $filepath = __DIR__ . '/../uploads/' . $row['foto'];
         
         if (file_exists($filepath)) {
-            // Detect MIME type
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $mimeType = finfo_file($finfo, $filepath);
             finfo_close($finfo);
@@ -34,7 +35,7 @@ if ($id > 0) {
     }
 }
 
-// Default placeholder jika tidak ada gambar
+// Placeholder jika gambar tidak ada
 header('Content-Type: image/svg+xml');
 echo '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
     <rect width="400" height="300" fill="#f0f0f0"/>
@@ -43,4 +44,3 @@ echo '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="
     </text>
 </svg>';
 exit;
-?>

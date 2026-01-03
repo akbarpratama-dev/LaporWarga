@@ -1,5 +1,4 @@
 <?php
-<?php
 session_start();
 
 // Redirect jika sudah login
