@@ -1,4 +1,4 @@
-
+<?php
 <?php
 session_start();
 
@@ -25,7 +25,7 @@ $statusQuery = $conn->query("
 ");
 $statusData = $statusQuery->fetchAll(PDO::FETCH_ASSOC);
 
-// Laporan per bulan (fix GROUP BY issue)
+// Laporan per bulan
 $monthlyQuery = $conn->query("
     SELECT 
         DATE_FORMAT(MIN(tanggal_lapor), '%Y-%m') as bulan,
@@ -57,7 +57,6 @@ $recentReports = $recentQuery->fetchAll(PDO::FETCH_ASSOC);
     <nav class="navbar">
         <div class="container">
             <a href="dashboard.php" class="nav-brand">
-                <i class="ri-government-line logo"></i>
                 <span>Admin LaporWarga</span>
             </a>
             <div class="nav-menu">
