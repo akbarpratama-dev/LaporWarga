@@ -16,9 +16,9 @@ $conn->exec("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY
 
 // Total laporan per status
 $total = $conn->query("SELECT COUNT(*) as total FROM laporan")->fetch()['total'];
-$diterima = $conn->query("SELECT COUNT(*) as total FROM laporan WHERE status = 'diterima'")->fetch()['total'];
-$diproses = $conn->query("SELECT COUNT(*) as total FROM laporan WHERE status = 'diproses'")->fetch()['total'];
-$selesai = $conn->query("SELECT COUNT(*) as total FROM laporan WHERE status = 'selesai'")->fetch()['total'];
+$diterima = $conn->query("SELECT COUNT(*) as total FROM laporan WHERE status = 'Diterima'")->fetch()['total'];
+$diproses = $conn->query("SELECT COUNT(*) as total FROM laporan WHERE status = 'Diproses'")->fetch()['total'];
+$selesai = $conn->query("SELECT COUNT(*) as total FROM laporan WHERE status = 'Selesai'")->fetch()['total'];
 
 // Rata-rata waktu penyelesaian
 $avgQuery = $conn->query("
@@ -27,7 +27,7 @@ $avgQuery = $conn->query("
         MIN(DATEDIFF(tanggal_selesai, tanggal_lapor)) as min_days,
         MAX(DATEDIFF(tanggal_selesai, tanggal_lapor)) as max_days
     FROM laporan 
-    WHERE status = 'selesai' AND tanggal_selesai IS NOT NULL
+    WHERE status = 'Selesai' AND tanggal_selesai IS NOT NULL
 ")->fetch();
 
 $avgDays = round($avgQuery['avg_days'] ?? 0);

@@ -1,6 +1,6 @@
 <?php
 session_start();
-if(!isset($_SESSION['admin_id'])) {
+if(!isset($_SESSION['admin_id']) && !isset($_SESSION['admin_logged_in'])) {
 	header("Location: ../admin/login.php?error=unauthorized");
 	exit();
 }

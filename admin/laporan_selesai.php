@@ -13,7 +13,7 @@ $conn = $database->getConnection();
 
 $stmt = $conn->prepare("
     SELECT * FROM laporan 
-    WHERE status = 'selesai' 
+  WHERE status = 'Selesai' 
     ORDER BY tanggal_selesai DESC
 ");
 $stmt->execute();

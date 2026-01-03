@@ -13,7 +13,7 @@ $conn = $database->getConnection();
 
 $stmt = $conn->prepare("
     SELECT * FROM laporan 
-    WHERE status IN ('diterima', 'diproses') 
+  WHERE status IN ('Diterima', 'Diproses') 
     ORDER BY tanggal_lapor DESC
 ");
 $stmt->execute();
@@ -83,8 +83,8 @@ $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
                   <td><span class="badge badge-secondary"><?php echo htmlspecialchars($report['kategori']); ?></span></td>
                   <td><?php echo htmlspecialchars(substr($report['lokasi'], 0, 50)); ?><?php echo strlen($report['lokasi']) > 50 ? '...' : ''; ?></td>
                   <td>
-                    <span class="badge badge-<?php echo $report['status'] === 'diterima' ? 'info' : 'warning'; ?>">
-                      <?php echo ucfirst($report['status']); ?>
+                    <span class="badge badge-<?php echo $report['status'] === 'Diterima' ? 'info' : 'warning'; ?>">
+                      <?php echo htmlspecialchars($report['status']); ?>
                     </span>
                   </td>
                   <td><?php echo date('d M Y, H:i', strtotime($report['tanggal_lapor'])); ?></td>
