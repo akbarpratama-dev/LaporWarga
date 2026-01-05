@@ -60,8 +60,9 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
+    # Port MySQL TIDAK exposed ke internet (hanya internal Docker network)
+    # ports:
+    #   - "3306:3306"
 
 volumes:
   db_data:
